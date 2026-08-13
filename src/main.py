@@ -5,6 +5,8 @@ import cv2
 import numpy as np
 
 class MainWindow(QMainWindow):
+    MAX_BATCH_IMAGES = 20
+
     def __init__(self):
         super().__init__()
 
@@ -14,33 +16,83 @@ class MainWindow(QMainWindow):
         self.filepath = None
         self.goldenImage = None
         self.batchImage = None
+        self.batchImages = []
+        self.batchPaths = []
+        self.current_index = 0
 
-        self.ui.uploadGolden.clicked.connect(lambda: self.button_clicked(self.ui.uploadGolden))
-        self.ui.uploadBatch.clicked.connect(lambda: self.button_clicked(self.ui.uploadBatch))
+        self.ui.uploadGolden.clicked.connect(lambda: self.upload_button_clicked(self.ui.uploadGolden))
+        self.ui.uploadBatch.clicked.connect(lambda: self.upload_button_clicked(self.ui.uploadBatch))
+        self.ui.previousButton.clicked.connect(self.prevBatchImage)
+        self.ui.nextButton.clicked.connect(self.nextBatchImage)
 
-    def button_clicked(self, button):
+    def upload_button_clicked(self, button):
         try:
             if button == self.ui.uploadGolden:
-                dialog_title = "Select Golden Image"
-                target_attr = "goldenImage"
-                target_view = self.ui.goldenView
+                filepath = QFileDialog.getOpenFileName(self, "Select Image", "", "Image Files (*.png *.jpg *.bmp)")
+                if filepath[0] != '':
+                    processed_image = self.image_process(filepath[0])
+                    if processed_image is not None:
+                        self.goldenImage = processed_image
+                        self.display_image(processed_image, self.ui.goldenView)
+                else:
+                    print("No file selected.")
+                    QMessageBox.warning(self, "Error", "Please select a file to upload.")
+                return
             elif button == self.ui.uploadBatch:
-                dialog_title = "Select Batch Image"
-                target_attr = "batchImage"
-                target_view = self.ui.batchView
+                filepaths = QFileDialog.getOpenFileNames(self, "Select Image(s)", "", "Image Files (*.png *.jpg *.bmp)")
+                selected_paths = filepaths[0]
+
+                if not selected_paths:
+                    print("No files selected.")
+                    QMessageBox.warning(self, "Error", "Please select at least one file to upload.")
+                    return
+
+                if len(selected_paths) > self.MAX_BATCH_IMAGES:
+                    QMessageBox.warning(
+                        self,
+                        "Batch Limit Reached",
+                        f"You selected {len(selected_paths)} images. Only the first {self.MAX_BATCH_IMAGES} will be used."
+                    )
+                    selected_paths = selected_paths[:self.MAX_BATCH_IMAGES]
+
+                processed_images = []
+                valid_paths = []
+
+                for path in selected_paths:
+                    image = self.image_process(path)
+                    if image is not None:
+                        processed_images.append(image)
+                        valid_paths.append(path)
+
+                if not processed_images:
+                    QMessageBox.warning(self, "Error", "No valid color images were selected.")
+                    return
+
+                if len(processed_images) < len(selected_paths):
+                    QMessageBox.warning(
+                        self,
+                        "Invalid Images",
+                        f"Some selected images were not valid color images and have been skipped. {len(processed_images)} valid images loaded."
+                    )
+
+                self.batchImages = processed_images
+                self.batchPaths = valid_paths
+                self.current_index = 0
+                self.batchImage = processed_images[0]
+                self.display_image(processed_images[0], self.ui.batchView)
+
+                if len(processed_images) > 1:
+                    QMessageBox.information(
+                        self,
+                        "Batch Loaded",
+                        f"Loaded {len(processed_images)} batch images. Showing the first image in preview."
+                    )
+                self.ui.indexTrackerText.setText(f"{self.current_index + 1}/{len(self.batchImages)}")
+                return
+            
             else:
                 QMessageBox.warning(self, "Error", "Unsupported upload button.")
                 return
-
-            filepath = QFileDialog.getOpenFileName(self, dialog_title, "", "Image Files (*.png *.jpg *.bmp)")
-            if filepath[0] != '':
-                processed_image = self.image_process(filepath[0])
-                if processed_image is not None:
-                    setattr(self, target_attr, processed_image)
-                    self.display_image(processed_image, target_view)
-            else:
-                print("No file selected.")
-                QMessageBox.warning(self, "Error", "Please select a file to upload.")
         except Exception as e:
             QMessageBox.critical(self, "Error", f"An error occurred: {str(e)}")
 
@@ -91,6 +143,24 @@ class MainWindow(QMainWindow):
                 graphics_view.fitInView(scene.sceneRect(), Qt.KeepAspectRatio)
         except Exception as e:
             QMessageBox.critical(self, "Error", f"An error occurred while displaying the image: {str(e)}")
+
+    def nextBatchImage(self):
+        if self.batchImages and len(self.batchImages) > 1:
+            if (self.current_index + 1) >= len(self.batchImages):
+                return
+            self.current_index += 1
+            self.batchImage = self.batchImages[self.current_index]
+            self.display_image(self.batchImage, self.ui.batchView)
+            self.ui.indexTrackerText.setText(f"{self.current_index + 1}/{len(self.batchImages)}")
+
+    def prevBatchImage(self):
+        if self.batchImages and len(self.batchImages) > 1:
+            if (self.current_index - 1) < 0:
+                return
+            self.current_index -= 1
+            self.batchImage = self.batchImages[self.current_index]
+            self.display_image(self.batchImage, self.ui.batchView)
+            self.ui.indexTrackerText.setText(f"{self.current_index + 1}/{len(self.batchImages)}")
         
 app = QApplication([])
 window = MainWindow()
