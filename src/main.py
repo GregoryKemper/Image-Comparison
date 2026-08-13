@@ -13,16 +13,31 @@ class MainWindow(QMainWindow):
 
         self.filepath = None
         self.goldenImage = None
+        self.batchImage = None
 
-        self.ui.uploadGolden.clicked.connect(self.button_clicked)
+        self.ui.uploadGolden.clicked.connect(lambda: self.button_clicked(self.ui.uploadGolden))
+        self.ui.uploadBatch.clicked.connect(lambda: self.button_clicked(self.ui.uploadBatch))
 
-    def button_clicked(self):
+    def button_clicked(self, button):
         try:
-            filepath = QFileDialog.getOpenFileName(self, "Select Golden Image", "", "Image Files (*.png *.jpg *.bmp)")
+            if button == self.ui.uploadGolden:
+                dialog_title = "Select Golden Image"
+                target_attr = "goldenImage"
+                target_view = self.ui.goldenView
+            elif button == self.ui.uploadBatch:
+                dialog_title = "Select Batch Image"
+                target_attr = "batchImage"
+                target_view = self.ui.batchView
+            else:
+                QMessageBox.warning(self, "Error", "Unsupported upload button.")
+                return
+
+            filepath = QFileDialog.getOpenFileName(self, dialog_title, "", "Image Files (*.png *.jpg *.bmp)")
             if filepath[0] != '':
-                self.goldenImage = self.image_process(filepath[0])
-                if self.goldenImage is not None:
-                    self.display_image(self.goldenImage, self.ui.goldenView)
+                processed_image = self.image_process(filepath[0])
+                if processed_image is not None:
+                    setattr(self, target_attr, processed_image)
+                    self.display_image(processed_image, target_view)
             else:
                 print("No file selected.")
                 QMessageBox.warning(self, "Error", "Please select a file to upload.")
