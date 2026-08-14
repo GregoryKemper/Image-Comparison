@@ -3,6 +3,7 @@ from PySide6.QtGui import QPixmap, QImage, Qt
 from Ui_MainWindow import Ui_MainWindow
 import cv2
 import numpy as np
+import json
 
 class MainWindow(QMainWindow):
     MAX_BATCH_IMAGES = 20
@@ -19,12 +20,16 @@ class MainWindow(QMainWindow):
         self.batchImages = []
         self.batchPaths = []
         self.current_index = 0
+        self.approval_array = [False] * self.MAX_BATCH_IMAGES
 
         self.ui.uploadGolden.clicked.connect(lambda: self.upload_button_clicked(self.ui.uploadGolden))
         self.ui.uploadBatch.clicked.connect(lambda: self.upload_button_clicked(self.ui.uploadBatch))
         self.ui.previousButton.clicked.connect(self.prevBatchImage)
         self.ui.nextButton.clicked.connect(self.nextBatchImage)
+        self.ui.approveButton.clicked.connect(lambda: self.rateImage(True))
+        self.ui.rejectButton.clicked.connect(lambda: self.rateImage(False))
 
+    #start of pipeline for image upload, processing, display.
     def upload_button_clicked(self, button):
         try:
             if button == self.ui.uploadGolden:
@@ -39,6 +44,7 @@ class MainWindow(QMainWindow):
                     QMessageBox.warning(self, "Error", "Please select a file to upload.")
                 return
             elif button == self.ui.uploadBatch:
+                QMessageBox.information(self, "Batch Upload", f"Please select up to {self.MAX_BATCH_IMAGES} images")
                 filepaths = QFileDialog.getOpenFileNames(self, "Select Image(s)", "", "Image Files (*.png *.jpg *.bmp)")
                 selected_paths = filepaths[0]
 
@@ -65,7 +71,6 @@ class MainWindow(QMainWindow):
                         valid_paths.append(path)
 
                 if not processed_images:
-                    QMessageBox.warning(self, "Error", "No valid color images were selected.")
                     return
 
                 if len(processed_images) < len(selected_paths):
@@ -85,7 +90,7 @@ class MainWindow(QMainWindow):
                     QMessageBox.information(
                         self,
                         "Batch Loaded",
-                        f"Loaded {len(processed_images)} batch images. Showing the first image in preview."
+                        f"Loaded {len(processed_images)} batch images."
                     )
                 self.ui.indexTrackerText.setText(f"{self.current_index + 1}/{len(self.batchImages)}")
                 return
@@ -96,9 +101,9 @@ class MainWindow(QMainWindow):
         except Exception as e:
             QMessageBox.critical(self, "Error", f"An error occurred: {str(e)}")
 
+    #turns image path into image object, uses check color function to determine if image is used
     def image_process(self, image_path):
         try:
-            # Load the image
             image = cv2.imread(image_path)
             if image is None:
                 QMessageBox.critical(self, "Error", "Failed to load the image. Please check the file path.")
@@ -111,6 +116,7 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, "Error", f"An error occurred while processing the image: {str(e)}")
             return None
 
+    #converts image to b g r, if all channels are equal image has no color
     def check_color(self, image):
         try:
             b, g, r = cv2.split(image)
@@ -122,6 +128,7 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, "Error", f"An error occurred while checking the image color: {str(e)}")
             return False
 
+    #turns image into displayable pixel map
     def image_to_pixmap(self, image):
         try:
             rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
@@ -133,6 +140,7 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, "Error", f"An error occurred while converting the image to pixmap: {str(e)}")
             return None
 
+    #displays image to specified graphics view
     def display_image(self, image, graphics_view):
         try:
             pixmap = self.image_to_pixmap(image)
@@ -144,6 +152,7 @@ class MainWindow(QMainWindow):
         except Exception as e:
             QMessageBox.critical(self, "Error", f"An error occurred while displaying the image: {str(e)}")
 
+    #moves batch image index forward, updates display and index tracker text
     def nextBatchImage(self):
         if self.batchImages and len(self.batchImages) > 1:
             if (self.current_index + 1) >= len(self.batchImages):
@@ -153,6 +162,7 @@ class MainWindow(QMainWindow):
             self.display_image(self.batchImage, self.ui.batchView)
             self.ui.indexTrackerText.setText(f"{self.current_index + 1}/{len(self.batchImages)}")
 
+    #moves batch image index backward, updates display and index tracker text
     def prevBatchImage(self):
         if self.batchImages and len(self.batchImages) > 1:
             if (self.current_index - 1) < 0:
@@ -161,6 +171,25 @@ class MainWindow(QMainWindow):
             self.batchImage = self.batchImages[self.current_index]
             self.display_image(self.batchImage, self.ui.batchView)
             self.ui.indexTrackerText.setText(f"{self.current_index + 1}/{len(self.batchImages)}")
+
+    def create_JSON(self):
+        if self.batchImages is not None:
+            image_data = {"images": []}
+            imageId = 0
+            for path in self.batchPaths:
+                image_data["images"].append({"id": imageId + 1, "path": path, "similarity": self.approval_array[imageId]})
+                imageId += 1
+            with open("data.json", "w") as file:
+                json.dump(image_data, file, indent=4)
+
+            data = json.load(open("data.json"))
+
+    def rateImage(self, approval):
+        if self.batchImages is not None and self.goldenImage is not None:
+            self.approval_array[self.current_index] = approval
+        else:
+            QMessageBox.warning(self, "Error", "upload golden and batch images before rating.")
+            return
         
 app = QApplication([])
 window = MainWindow()
