@@ -11,21 +11,22 @@
 from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
     QMetaObject, QObject, QPoint, QRect,
     QSize, QTime, QUrl, Qt)
-from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
-    QFont, QFontDatabase, QGradient, QIcon,
-    QImage, QKeySequence, QLinearGradient, QPainter,
-    QPalette, QPixmap, QRadialGradient, QTransform)
+from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
+    QCursor, QFont, QFontDatabase, QGradient,
+    QIcon, QImage, QKeySequence, QLinearGradient,
+    QPainter, QPalette, QPixmap, QRadialGradient,
+    QTransform)
 from PySide6.QtWidgets import (QApplication, QGraphicsView, QHBoxLayout, QLayout,
-    QLineEdit, QMainWindow, QMenuBar, QPushButton,
-    QSizePolicy, QSpacerItem, QStatusBar, QVBoxLayout,
-    QWidget)
+    QLineEdit, QMainWindow, QMenu, QMenuBar,
+    QPushButton, QSizePolicy, QSpacerItem, QStatusBar,
+    QVBoxLayout, QWidget)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         if not MainWindow.objectName():
             MainWindow.setObjectName(u"MainWindow")
         MainWindow.resize(841, 562)
-        MainWindow.setMinimumSize(QSize(400, 250))
+        MainWindow.setMinimumSize(QSize(400, 400))
         palette = QPalette()
         brush = QBrush(QColor(0, 0, 0, 255))
         brush.setStyle(Qt.BrushStyle.SolidPattern)
@@ -34,6 +35,10 @@ class Ui_MainWindow(object):
         palette.setBrush(QPalette.ColorGroup.Disabled, QPalette.ColorRole.Base, brush)
         palette.setBrush(QPalette.ColorGroup.Disabled, QPalette.ColorRole.Window, brush)
         MainWindow.setPalette(palette)
+        self.actionSave = QAction(MainWindow)
+        self.actionSave.setObjectName(u"actionSave")
+        self.actionExit = QAction(MainWindow)
+        self.actionExit.setObjectName(u"actionExit")
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
         sizePolicy = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
@@ -57,7 +62,7 @@ class Ui_MainWindow(object):
         sizePolicy1.setVerticalStretch(0)
         sizePolicy1.setHeightForWidth(self.uploadGolden.sizePolicy().hasHeightForWidth())
         self.uploadGolden.setSizePolicy(sizePolicy1)
-        self.uploadGolden.setMinimumSize(QSize(0, 35))
+        self.uploadGolden.setMinimumSize(QSize(0, 50))
 
         self.horizontalLayout.addWidget(self.uploadGolden)
 
@@ -65,6 +70,7 @@ class Ui_MainWindow(object):
         self.uploadBatch.setObjectName(u"uploadBatch")
         sizePolicy1.setHeightForWidth(self.uploadBatch.sizePolicy().hasHeightForWidth())
         self.uploadBatch.setSizePolicy(sizePolicy1)
+        self.uploadBatch.setMinimumSize(QSize(0, 50))
 
         self.horizontalLayout.addWidget(self.uploadBatch)
 
@@ -121,12 +127,19 @@ class Ui_MainWindow(object):
         sizePolicy2.setHeightForWidth(self.indexTrackerText.sizePolicy().hasHeightForWidth())
         self.indexTrackerText.setSizePolicy(sizePolicy2)
         self.indexTrackerText.setMinimumSize(QSize(50, 35))
-        self.indexTrackerText.setMaximumSize(QSize(50, 16777215))
+        self.indexTrackerText.setMaximumSize(QSize(50, 50))
         self.indexTrackerText.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
         self.indexTrackerText.setMaxLength(20)
         self.indexTrackerText.setReadOnly(True)
 
         self.horizontalLayout_3.addWidget(self.indexTrackerText)
+
+        self.approvalView = QGraphicsView(self.centralwidget)
+        self.approvalView.setObjectName(u"approvalView")
+        self.approvalView.setMinimumSize(QSize(50, 35))
+        self.approvalView.setMaximumSize(QSize(50, 50))
+
+        self.horizontalLayout_3.addWidget(self.approvalView)
 
         self.nextButton = QPushButton(self.centralwidget)
         self.nextButton.setObjectName(u"nextButton")
@@ -154,7 +167,7 @@ class Ui_MainWindow(object):
         sizePolicy3.setHeightForWidth(self.algorithmButton.sizePolicy().hasHeightForWidth())
         self.algorithmButton.setSizePolicy(sizePolicy3)
         self.algorithmButton.setMinimumSize(QSize(50, 50))
-        self.algorithmButton.setMaximumSize(QSize(100, 100))
+        self.algorithmButton.setMaximumSize(QSize(175, 100))
 
         self.horizontalLayout_4.addWidget(self.algorithmButton)
 
@@ -164,7 +177,7 @@ class Ui_MainWindow(object):
         sizePolicy3.setHeightForWidth(self.dissimilarButton.sizePolicy().hasHeightForWidth())
         self.dissimilarButton.setSizePolicy(sizePolicy3)
         self.dissimilarButton.setMinimumSize(QSize(50, 50))
-        self.dissimilarButton.setMaximumSize(QSize(100, 100))
+        self.dissimilarButton.setMaximumSize(QSize(175, 100))
 
         self.horizontalLayout_4.addWidget(self.dissimilarButton)
 
@@ -173,7 +186,7 @@ class Ui_MainWindow(object):
         sizePolicy3.setHeightForWidth(self.similarButton.sizePolicy().hasHeightForWidth())
         self.similarButton.setSizePolicy(sizePolicy3)
         self.similarButton.setMinimumSize(QSize(50, 50))
-        self.similarButton.setMaximumSize(QSize(100, 100))
+        self.similarButton.setMaximumSize(QSize(175, 100))
 
         self.horizontalLayout_4.addWidget(self.similarButton)
 
@@ -195,7 +208,32 @@ class Ui_MainWindow(object):
         self.menubar = QMenuBar(MainWindow)
         self.menubar.setObjectName(u"menubar")
         self.menubar.setGeometry(QRect(0, 0, 841, 33))
+        sizePolicy4 = QSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.MinimumExpanding)
+        sizePolicy4.setHorizontalStretch(0)
+        sizePolicy4.setVerticalStretch(0)
+        sizePolicy4.setHeightForWidth(self.menubar.sizePolicy().hasHeightForWidth())
+        self.menubar.setSizePolicy(sizePolicy4)
+        self.menubar.setMinimumSize(QSize(0, 0))
+        palette1 = QPalette()
+        brush1 = QBrush(QColor(255, 255, 255, 228))
+        brush1.setStyle(Qt.BrushStyle.SolidPattern)
+        palette1.setBrush(QPalette.ColorGroup.Active, QPalette.ColorRole.WindowText, brush1)
+        brush2 = QBrush(QColor(255, 255, 255, 255))
+        brush2.setStyle(Qt.BrushStyle.SolidPattern)
+        palette1.setBrush(QPalette.ColorGroup.Active, QPalette.ColorRole.Window, brush2)
+        palette1.setBrush(QPalette.ColorGroup.Inactive, QPalette.ColorRole.WindowText, brush1)
+        palette1.setBrush(QPalette.ColorGroup.Inactive, QPalette.ColorRole.Window, brush2)
+        palette1.setBrush(QPalette.ColorGroup.Disabled, QPalette.ColorRole.Base, brush2)
+        palette1.setBrush(QPalette.ColorGroup.Disabled, QPalette.ColorRole.Window, brush2)
+        self.menubar.setPalette(palette1)
+        self.menuFile = QMenu(self.menubar)
+        self.menuFile.setObjectName(u"menuFile")
+        self.menuFile.setMinimumSize(QSize(0, 0))
         MainWindow.setMenuBar(self.menubar)
+
+        self.menubar.addAction(self.menuFile.menuAction())
+        self.menuFile.addAction(self.actionSave)
+        self.menuFile.addAction(self.actionExit)
 
         self.retranslateUi(MainWindow)
 
@@ -204,6 +242,8 @@ class Ui_MainWindow(object):
 
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"MainWindow", None))
+        self.actionSave.setText(QCoreApplication.translate("MainWindow", u"Save", None))
+        self.actionExit.setText(QCoreApplication.translate("MainWindow", u"Exit", None))
         self.uploadGolden.setText(QCoreApplication.translate("MainWindow", u"Upload Golden", None))
         self.uploadBatch.setText(QCoreApplication.translate("MainWindow", u"Upload Batch", None))
         self.previousButton.setText(QCoreApplication.translate("MainWindow", u"Previous", None))
@@ -212,5 +252,6 @@ class Ui_MainWindow(object):
         self.algorithmButton.setText(QCoreApplication.translate("MainWindow", u"Algorithm", None))
         self.dissimilarButton.setText(QCoreApplication.translate("MainWindow", u"Dissimilar", None))
         self.similarButton.setText(QCoreApplication.translate("MainWindow", u"Similar", None))
+        self.menuFile.setTitle(QCoreApplication.translate("MainWindow", u"File", None))
     # retranslateUi
 
