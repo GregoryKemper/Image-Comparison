@@ -15,7 +15,7 @@ class MainWindow(QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
-        self.filepath = None
+        self.goldenFilePath = None
         self.goldenImage = None
         self.batchImage = None
         self.batchImages = []
@@ -31,12 +31,16 @@ class MainWindow(QMainWindow):
 
         self.ui.uploadGolden.clicked.connect(lambda: self.upload_button_clicked(self.ui.uploadGolden))
         self.ui.uploadBatch.clicked.connect(lambda: self.upload_button_clicked(self.ui.uploadBatch))
-        self.ui.previousButton.clicked.connect(self.prevBatchImage)
-        self.ui.nextButton.clicked.connect(self.nextBatchImage)
-        self.ui.similarButton.clicked.connect(lambda: self.rateImage(True))
-        self.ui.dissimilarButton.clicked.connect(lambda: self.rateImage(False))
+        self.ui.previousButton.clicked.connect(self.prev_batch_image)
+        self.ui.nextButton.clicked.connect(self.next_batch_image)
+        self.ui.similarButton.clicked.connect(lambda: self.rate_image(True))
+        self.ui.dissimilarButton.clicked.connect(lambda: self.rate_image(False))
         #self.ui.algorithmButton.clicked.connect(self.create_JSON)
         self.ui.algorithmButton.clicked.connect(self.algorithm_button_clicked)
+        self.ui.actionSave.triggered.connect(self.save_button)
+        self.ui.actionExit.triggered.connect(self.close)
+        self.ui.actionAuto.triggered.connect(self.auto_calculate)
+        self.ui.actionLoad.triggered.connect(self.load_save)
 
         self.setWindowTitle("Gregs Image Comparison")
         self.setWindowIcon(QPixmap(os.path.join(assets_dir, "G-logo.png")))
@@ -49,9 +53,9 @@ class MainWindow(QMainWindow):
     def upload_button_clicked(self, button):
         try:
             if button == self.ui.uploadGolden:
-                filepath = QFileDialog.getOpenFileName(self, "Select Image", "", "Image Files (*.png *.jpg *.bmp)")
-                if filepath[0] != '':
-                    processed_image = self.image_process(filepath[0])
+                self.goldenFilePath = QFileDialog.getOpenFileName(self, "Select Image", "", "Image Files (*.png *.jpg *.bmp)")
+                if self.goldenFilePath[0] != '':
+                    processed_image = self.image_process(self.goldenFilePath[0])
                     if processed_image is not None:
                         self.goldenImage = processed_image
                         self.display_image(processed_image, self.ui.goldenView)
@@ -174,7 +178,7 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, "Error", f"An error occurred while displaying the image: {str(e)}")
 
     #moves batch image index forward, updates display and index tracker text
-    def nextBatchImage(self):
+    def next_batch_image(self):
         if self.batchImages and len(self.batchImages) > 1:
             if (self.current_index + 1) >= len(self.batchImages):
                 return
@@ -185,7 +189,7 @@ class MainWindow(QMainWindow):
             self.ui.indexTrackerText.setText(f"{self.current_index + 1}/{len(self.batchImages)}")
 
     #moves batch image index backward, updates display and index tracker text
-    def prevBatchImage(self):
+    def prev_batch_image(self):
         if self.batchImages and len(self.batchImages) > 1:
             if (self.current_index - 1) < 0:
                 return
@@ -196,20 +200,19 @@ class MainWindow(QMainWindow):
             self.ui.indexTrackerText.setText(f"{self.current_index + 1}/{len(self.batchImages)}")
 
     #creates parsable json file for current batch and rating
-    def create_JSON(self):
+    def create_JSON(self, save_path):
         if self.batchImages is not None:
             image_data = {"images": []}
             imageId = 0
             for path in self.batchPaths:
                 image_data["images"].append({"id": imageId, "path": path, "similarity": self.approval_array[imageId]})
                 imageId += 1
-            with open("data.json", "w") as file:
+            image_data["golden_image"] = {"path": self.goldenFilePath[0] if self.goldenFilePath else None}
+            with open(save_path, "w") as file:
                 json.dump(image_data, file, indent=4)
 
-            data = json.load(open("data.json"))
-
     #rates the current batch image as similar or dissimilar to the golden image
-    def rateImage(self, approval):
+    def rate_image(self, approval):
         if self.batchImages and self.goldenImage is not None:
             self.approval_array[self.current_index] = approval
             self.truth_val_changed(approval)
@@ -286,6 +289,75 @@ class MainWindow(QMainWindow):
             self.truth_val_changed(self.approval_array[self.current_index])
         else:
             self.truth_val_changed("Unrated")
+
+    def save_button(self):
+        save_path, _ = QFileDialog.getSaveFileName(self, "Save File", "", "JSON Files (*.json)")
+        if save_path:
+            if save_path[-5:] != ".json":
+                save_path += ".json"
+            self.create_JSON(save_path)
+
+    def auto_calculate(self):
+        if self.batchImages and self.goldenImage is not None:
+            for i in range(len(self.batchImages)):
+                self.current_index = i
+                self.algorithm_button_clicked()
+            for i in range(len(self.batchImages)):
+                self.prev_batch_image()
+            self.batchImage = self.batchImages[self.current_index]
+            self.display_image(self.batchImage, self.ui.batchView)
+            self.ui.indexTrackerText.setText(f"{self.current_index + 1}/{len(self.batchImages)}")
+        else:
+            QMessageBox.warning(self, "Error", "upload golden and batch images before auto calculating.")
+            return
+
+    def load_save(self):
+        QMessageBox.information(self, "Load Save", "image file paths must not have changed since last save")
+        save_path, _ = QFileDialog.getOpenFileName(self, "Select JSON File", "", "JSON Files (*.json)")
+        if save_path:
+            try:
+                with open(save_path, "r") as file:
+                    image_data = json.load(file)
+                golden_image_path = image_data.get("golden_image", {}).get("path")
+                if golden_image_path and os.path.exists(golden_image_path):
+                    self.goldenFilePath = (golden_image_path,)
+                    self.goldenImage = self.image_process(golden_image_path)
+                    if self.goldenImage is not None:
+                        self.display_image(self.goldenImage, self.ui.goldenView)
+                else:
+                    QMessageBox.warning(self, "Error", "Golden image path is invalid or does not exist.")
+                    return
+
+                batch_images_data = image_data.get("images", [])
+                valid_paths = []
+                processed_images = []
+                for img in batch_images_data:
+                    path = img.get("path")
+                    if path and os.path.exists(path):
+                        image = self.image_process(path)
+                        if image is not None:
+                            processed_images.append(image)
+                            valid_paths.append(path)
+
+                if not processed_images:
+                    QMessageBox.warning(self, "Error", "No valid batch images found in the JSON file.")
+                    return
+
+                self.batchImages = processed_images
+                self.batchPaths = valid_paths
+                self.current_index = 0
+                self.approval_array = [img.get("similarity", "Unrated") for img in batch_images_data]
+                self.batchImage = processed_images[0]
+                self.truth_val_changed(self.approval_array[self.current_index])
+                self.display_image(processed_images[0], self.ui.batchView)
+                self.ui.indexTrackerText.setText(f"{self.current_index + 1}/{len(self.batchImages)}")
+
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"An error occurred while loading the JSON file: {str(e)}")
+            
+
+    
+        
             
 app = QApplication([])
 window = MainWindow()
