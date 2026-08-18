@@ -39,6 +39,10 @@ class Ui_MainWindow(object):
         self.actionSave.setObjectName(u"actionSave")
         self.actionExit = QAction(MainWindow)
         self.actionExit.setObjectName(u"actionExit")
+        self.actionAuto = QAction(MainWindow)
+        self.actionAuto.setObjectName(u"actionAuto")
+        self.actionLoad = QAction(MainWindow)
+        self.actionLoad.setObjectName(u"actionLoad")
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
         sizePolicy = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
@@ -215,7 +219,7 @@ class Ui_MainWindow(object):
         self.menubar.setSizePolicy(sizePolicy4)
         self.menubar.setMinimumSize(QSize(0, 0))
         palette1 = QPalette()
-        brush1 = QBrush(QColor(255, 255, 255, 228))
+        brush1 = QBrush(QColor(20, 20, 20, 228))
         brush1.setStyle(Qt.BrushStyle.SolidPattern)
         palette1.setBrush(QPalette.ColorGroup.Active, QPalette.ColorRole.WindowText, brush1)
         brush2 = QBrush(QColor(255, 255, 255, 255))
@@ -226,6 +230,10 @@ class Ui_MainWindow(object):
         palette1.setBrush(QPalette.ColorGroup.Disabled, QPalette.ColorRole.Base, brush2)
         palette1.setBrush(QPalette.ColorGroup.Disabled, QPalette.ColorRole.Window, brush2)
         self.menubar.setPalette(palette1)
+        self.menubar.setStyleSheet(u"QMenuBar { background-color: rgb(245, 245, 245); color: rgb(20, 20, 20); }\n"
+"QMenuBar::item:selected { background-color: rgb(220, 220, 220); }\n"
+"QMenu { background-color: rgb(250, 250, 250); color: rgb(20, 20, 20); }\n"
+"QMenu::item:selected { background-color: rgb(220, 220, 220); }")
         self.menuFile = QMenu(self.menubar)
         self.menuFile.setObjectName(u"menuFile")
         self.menuFile.setMinimumSize(QSize(0, 0))
@@ -234,6 +242,8 @@ class Ui_MainWindow(object):
         self.menubar.addAction(self.menuFile.menuAction())
         self.menuFile.addAction(self.actionSave)
         self.menuFile.addAction(self.actionExit)
+        self.menuFile.addAction(self.actionAuto)
+        self.menuFile.addAction(self.actionLoad)
 
         self.retranslateUi(MainWindow)
 
@@ -244,6 +254,8 @@ class Ui_MainWindow(object):
         MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"MainWindow", None))
         self.actionSave.setText(QCoreApplication.translate("MainWindow", u"Save", None))
         self.actionExit.setText(QCoreApplication.translate("MainWindow", u"Exit", None))
+        self.actionAuto.setText(QCoreApplication.translate("MainWindow", u"Auto", None))
+        self.actionLoad.setText(QCoreApplication.translate("MainWindow", u"Load", None))
         self.uploadGolden.setText(QCoreApplication.translate("MainWindow", u"Upload Golden", None))
         self.uploadBatch.setText(QCoreApplication.translate("MainWindow", u"Upload Batch", None))
         self.previousButton.setText(QCoreApplication.translate("MainWindow", u"Previous", None))

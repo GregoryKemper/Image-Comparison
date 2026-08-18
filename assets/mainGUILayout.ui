@@ -439,9 +439,9 @@
       <colorrole role="WindowText">
        <brush brushstyle="SolidPattern">
         <color alpha="228">
-         <red>255</red>
-         <green>255</green>
-         <blue>255</blue>
+                 <red>20</red>
+                 <green>20</green>
+                 <blue>20</blue>
         </color>
        </brush>
       </colorrole>
@@ -459,9 +459,9 @@
       <colorrole role="WindowText">
        <brush brushstyle="SolidPattern">
         <color alpha="228">
-         <red>255</red>
-         <green>255</green>
-         <blue>255</blue>
+                 <red>20</red>
+                 <green>20</green>
+                 <blue>20</blue>
         </color>
        </brush>
       </colorrole>
@@ -497,6 +497,12 @@
      </disabled>
     </palette>
    </property>
+    <property name="styleSheet">
+     <string notr="true">QMenuBar { background-color: rgb(245, 245, 245); color: rgb(20, 20, 20); }
+QMenuBar::item:selected { background-color: rgb(220, 220, 220); }
+QMenu { background-color: rgb(250, 250, 250); color: rgb(20, 20, 20); }
+QMenu::item:selected { background-color: rgb(220, 220, 220); }</string>
+    </property>
    <widget class="QMenu" name="menuFile">
     <property name="minimumSize">
      <size>
@@ -509,6 +515,8 @@
     </property>
     <addaction name="actionSave"/>
     <addaction name="actionExit"/>
+    <addaction name="actionAuto"/>
+    <addaction name="actionLoad"/>
    </widget>
    <addaction name="menuFile"/>
   </widget>
@@ -520,6 +528,16 @@
   <action name="actionExit">
    <property name="text">
     <string>Exit</string>
+   </property>
+  </action>
+  <action name="actionAuto">
+   <property name="text">
+    <string>Auto</string>
+   </property>
+  </action>
+  <action name="actionLoad">
+   <property name="text">
+    <string>Load</string>
    </property>
   </action>
  </widget>
