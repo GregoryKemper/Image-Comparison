@@ -1,29 +1,44 @@
 # Image Comparison Tool
 
-### Requirements for install:
-  - Python 3.12.5
-  - Microsoft Visual Studio Code
+### Requirements
+- Python 3.12.5
+- Microsoft Visual Studio Code
+- Python extension for VS Code
 
-### Install:
-  - Clone the repo: 
-    - https://github.com/User/Repo
-  - Create Virtual Environment
-    -Hit (Ctrl + Shift + P) then type "Python: Create Environment" and select it then select .venv then 3.12. It should prompt you to install the requirements.txt file. Please select this to save the next step.
+### Install
+- Clone the repo:
+  - https://github.com/GregoryKemper/Image-Comparison
+- Open the project folder in VS Code.
+- Create a virtual environment with Command Palette:
+  - Press `Ctrl + Shift + P`
+  - Run `Python: Create Environment`
+  - Choose `Venv`
+  - Choose Python `3.12`
+  - Select `requirements.txt` when prompted to install dependencies
+
+### Activate Virtual Environment (if VS Code does not auto-activate)
+- PowerShell:
+  - `./venv/Scripts/Activate.ps1` (or `./.venv/Scripts/Activate.ps1`)
+- Git Bash:
+  - `source venv/Scripts/activate` (or `source .venv/Scripts/activate`)
 
 ### Run the Program
-  - Navigate to the cloned github directory on your computer then go into the "src" directory
-  - Activate your virtual environment
-    - Usually automatically activates, if not make your way to your virtual environment directory then run "activate"
-  - Run the command
-    - "python main.py"
+- From the project root directory, run:
+  - `python src/main.py`
 
-### Program instructions
-  - This is an image comparison tool, where a user can upload a "golden" picture and a batch of up to 20 other pictures, then compare them manually or use an algorithm to determine if they are similar.
-  - Click "Upload Golden" and select an image to display your golden image
-  - Click "Upload Batch" and select up to 20 images to display your batch images. Navigate between them with the arrows under the batch image viewer.
-  - Click "Similar" or "Dissimilar" to manually grade images, or click "Algorithm" to have an algorithm make a guess
-  - Under the menu bar at the top, there are some options:
-    - Save will allow you to save a .json file including the index, image path, and if the images were similar or not. It also includes the path to the golden image
-    - Auto will go through every uploaded image and use the algorithm to grade them all. This will not preserve manually graded images
-    - Load will take your saved .json file and load it into the program so you can look through and grade the images again. 
-      - This only works if the file paths are not changed since the save.
+### Program Instructions
+- This is an image comparison tool where a user uploads one golden image and a batch of up to 20 other images, then compares them manually or with an algorithm.
+- The app supports color images only.
+- Click `Upload Golden` and select an image.
+- Click `Upload Batch` and select up to 20 images.
+- Use `Previous` and `Next` to move through the batch.
+- Click `Similar` or `Dissimilar` to manually rate the current image.
+- Click `Algorithm` to run comparison on the current image.
+
+### Menu Bar Actions
+- `Save` writes a JSON file containing:
+  - each batch image `id`, `path`, and `similarity`
+  - the golden image path under `golden_image.path`
+- `Auto` runs the algorithm across the entire currently loaded batch (this overwrites prior manual ratings for those images).
+- `Load` reads a previously saved JSON file and reloads images/ratings.
+  - Image file paths must still exist at the same locations.
