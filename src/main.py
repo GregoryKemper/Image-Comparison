@@ -326,7 +326,6 @@ class MainWindow(QMainWindow):
                         self.display_image(self.goldenImage, self.ui.goldenView)
                 else:
                     QMessageBox.warning(self, "Error", "Golden image path is invalid or does not exist.")
-                    return
 
                 batch_images_data = image_data.get("images", [])
                 valid_paths = []
@@ -343,6 +342,10 @@ class MainWindow(QMainWindow):
                     QMessageBox.warning(self, "Error", "No valid batch images found in the JSON file.")
                     return
 
+                if len(processed_images) < len(batch_images_data):
+                    QMessageBox.warning(self, "Invalid Images", f"Some images in JSON file invalid."
+                    )
+
                 self.batchImages = processed_images
                 self.batchPaths = valid_paths
                 self.current_index = 0
@@ -354,10 +357,6 @@ class MainWindow(QMainWindow):
 
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"An error occurred while loading the JSON file: {str(e)}")
-            
-
-    
-        
             
 app = QApplication([])
 window = MainWindow()
