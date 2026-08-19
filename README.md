@@ -23,6 +23,8 @@
   - `source venv/Scripts/activate` (or `source .venv/Scripts/activate`)
 
 ### Run the Program
+- Before running the program, you must first run qmake.py. From the root directory, run:
+  - `python qmake.py`
 - From the project root directory, run:
   - `python src/main.py`
 
