@@ -308,6 +308,14 @@ class MainWindow(QMainWindow):
 
     def auto_calculate(self):
         if self.batch_images and self.golden_image is not None:
+            reply = QMessageBox.question(
+                self,
+                "Auto algorithm",
+                "Auto algorithm will override all manual ratings. Proceed?",
+                QMessageBox.Yes | QMessageBox.No
+            )
+            if reply == QMessageBox.No:
+                return
             for i in range(len(self.batch_images)):
                 self.current_index = i
                 self.algorithm_button_clicked()
