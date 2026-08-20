@@ -1,11 +1,12 @@
-from pathlib import Path
+import json
+import os
 import sys
+from pathlib import Path
+
 from PySide6.QtWidgets import QApplication, QMainWindow, QFileDialog, QMessageBox, QGraphicsScene
 from PySide6.QtGui import QPixmap, QImage, Qt
 import cv2
 import numpy as np
-import json
-import os
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
@@ -15,6 +16,8 @@ from gen.Ui_MainWindow import Ui_MainWindow
 
 
 class MainWindow(QMainWindow):
+
+
     MAX_BATCH_IMAGES = 20
 
     def __init__(self):
@@ -23,19 +26,19 @@ class MainWindow(QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
-        self.goldenFilePath = None
-        self.goldenImage = None
-        self.batchImage = None
-        self.batchImages = []
-        self.batchPaths = []
+        self.golden_file_path = None
+        self.golden_image = None
+        self.batch_image = None
+        self.batch_images = []
+        self.batch_paths = []
         self.current_index = 0
         self.approval_array = ["Unrated"] * self.MAX_BATCH_IMAGES
         assets_dir = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", "assets"))
-        self.redX = cv2.imread(os.path.join(assets_dir, "red-x.png"))
-        self.greenCheck = cv2.imread(os.path.join(assets_dir, "green-check.png"))
-        self.whiteSpace = cv2.imread(os.path.join(assets_dir, "whiteScreen.png"))
+        self.red_x = cv2.imread(os.path.join(assets_dir, "red-x.png"))
+        self.green_check = cv2.imread(os.path.join(assets_dir, "green-check.png"))
+        self.white_space = cv2.imread(os.path.join(assets_dir, "whiteScreen.png"))
         self.logo = cv2.imread(os.path.join(assets_dir, "G-logo.png"))
-        self.approvalImage = self.ui.approvalView
+        self.approval_image = self.ui.approvalView
 
         self.ui.uploadGolden.clicked.connect(lambda: self.upload_button_clicked(self.ui.uploadGolden))
         self.ui.uploadBatch.clicked.connect(lambda: self.upload_button_clicked(self.ui.uploadBatch))
@@ -43,7 +46,7 @@ class MainWindow(QMainWindow):
         self.ui.nextButton.clicked.connect(self.next_batch_image)
         self.ui.similarButton.clicked.connect(lambda: self.rate_image(True))
         self.ui.dissimilarButton.clicked.connect(lambda: self.rate_image(False))
-        #self.ui.algorithmButton.clicked.connect(self.create_JSON)
+        #self.ui.algorithmButton.clicked.connect(self.create_json)
         self.ui.algorithmButton.clicked.connect(self.algorithm_button_clicked)
         self.ui.actionSave.triggered.connect(self.save_button)
         self.ui.actionExit.triggered.connect(self.close)
@@ -61,11 +64,11 @@ class MainWindow(QMainWindow):
     def upload_button_clicked(self, button):
         try:
             if button == self.ui.uploadGolden:
-                self.goldenFilePath = QFileDialog.getOpenFileName(self, "Select Image", "", "Image Files (*.png *.jpg *.bmp)")
-                if self.goldenFilePath[0] != '':
-                    processed_image = self.image_process(self.goldenFilePath[0])
+                self.golden_file_path = QFileDialog.getOpenFileName(self, "Select Image", "", "Image Files (*.png *.jpg *.bmp)")
+                if self.golden_file_path[0] != '':
+                    processed_image = self.image_process(self.golden_file_path[0])
                     if processed_image is not None:
-                        self.goldenImage = processed_image
+                        self.golden_image = processed_image
                         self.display_image(processed_image, self.ui.goldenView)
                 else:
                     #print("No file selected.")
@@ -109,11 +112,11 @@ class MainWindow(QMainWindow):
                     )
 
                 self.truth_val_changed("Unrated")
-                self.batchImages = processed_images
-                self.batchPaths = valid_paths
+                self.batch_images = processed_images
+                self.batch_paths = valid_paths
                 self.current_index = 0
                 self.approval_array = ["Unrated"] * self.MAX_BATCH_IMAGES
-                self.batchImage = processed_images[0]
+                self.batch_image = processed_images[0]
                 self.display_image(processed_images[0], self.ui.batchView)
 
                 if len(processed_images) > 1:
@@ -122,9 +125,8 @@ class MainWindow(QMainWindow):
                         "Batch Loaded",
                         f"Loaded {len(processed_images)} batch images."
                     )
-                self.ui.indexTrackerText.setText(f"{self.current_index + 1}/{len(self.batchImages)}")
+                self.ui.indexTrackerText.setText(f"{self.current_index + 1}/{len(self.batch_images)}")
                 return
-            
             else:
                 QMessageBox.warning(self, "Error", "Unsupported upload button.")
                 return
@@ -171,12 +173,12 @@ class MainWindow(QMainWindow):
             return None
 
     #displays image to specified graphics view
-    def display_image(self, image, graphics_view):
+    def display_image(self, pixel_map, graphics_view):
         try:
-            if isinstance(image, QPixmap):
-                pixmap = image
+            if isinstance(pixel_map, QPixmap):
+                pixmap = pixel_map
             else:
-                pixmap = self.image_to_pixmap(image)
+                pixmap = self.image_to_pixmap(pixel_map)
             if pixmap is not None:
                 scene = QGraphicsScene()
                 scene.addPixmap(pixmap)
@@ -187,41 +189,41 @@ class MainWindow(QMainWindow):
 
     #moves batch image index forward, updates display and index tracker text
     def next_batch_image(self):
-        if self.batchImages and len(self.batchImages) > 1:
-            if (self.current_index + 1) >= len(self.batchImages):
+        if self.batch_images and len(self.batch_images) > 1:
+            if (self.current_index + 1) >= len(self.batch_images):
                 return
             self.current_index += 1
             self.truth_val_changed(self.approval_array[self.current_index])
-            self.batchImage = self.batchImages[self.current_index]
-            self.display_image(self.batchImage, self.ui.batchView)
-            self.ui.indexTrackerText.setText(f"{self.current_index + 1}/{len(self.batchImages)}")
+            self.batch_image = self.batch_images[self.current_index]
+            self.display_image(self.batch_image, self.ui.batchView)
+            self.ui.indexTrackerText.setText(f"{self.current_index + 1}/{len(self.batch_images)}")
 
     #moves batch image index backward, updates display and index tracker text
     def prev_batch_image(self):
-        if self.batchImages and len(self.batchImages) > 1:
+        if self.batch_images and len(self.batch_images) > 1:
             if (self.current_index - 1) < 0:
                 return
             self.current_index -= 1
             self.truth_val_changed(self.approval_array[self.current_index])
-            self.batchImage = self.batchImages[self.current_index]
-            self.display_image(self.batchImage, self.ui.batchView)
-            self.ui.indexTrackerText.setText(f"{self.current_index + 1}/{len(self.batchImages)}")
+            self.batch_image = self.batch_images[self.current_index]
+            self.display_image(self.batch_image, self.ui.batchView)
+            self.ui.indexTrackerText.setText(f"{self.current_index + 1}/{len(self.batch_images)}")
 
     #creates parsable json file for current batch and rating
-    def create_JSON(self, save_path):
-        if self.batchImages is not None:
+    def create_json(self, save_path):
+        if self.batch_images is not None:
             image_data = {"images": []}
-            imageId = 0
-            for path in self.batchPaths:
-                image_data["images"].append({"id": imageId, "path": path, "similarity": self.approval_array[imageId]})
-                imageId += 1
-            image_data["golden_image"] = {"path": self.goldenFilePath[0] if self.goldenFilePath else None}
+            image_ID = 0
+            for path in self.batch_paths:
+                image_data["images"].append({"id": image_ID, "path": path, "similarity": self.approval_array[image_ID]})
+                image_ID += 1
+            image_data["golden_image"] = {"path": self.golden_file_path[0] if self.golden_file_path else None}
             with open(save_path, "w") as file:
                 json.dump(image_data, file, indent=4)
 
     #rates the current batch image as similar or dissimilar to the golden image
     def rate_image(self, approval):
-        if self.batchImages and self.goldenImage is not None:
+        if self.batch_images and self.golden_image is not None:
             self.approval_array[self.current_index] = approval
             self.truth_val_changed(approval)
         else:
@@ -230,10 +232,10 @@ class MainWindow(QMainWindow):
 
     #first algorithm, compares to see if they are the exact same image
     def exact_algorithm(self):
-        if self.batchImages and self.goldenImage is not None:
-            currImage = self.batchImages[self.current_index]
-            r1, g1, b1 = cv2.split(currImage)
-            r2, g2, b2 = cv2.split(self.goldenImage)
+        if self.batch_images and self.golden_image is not None:
+            curr_image = self.batch_images[self.current_index]
+            r1, g1, b1 = cv2.split(curr_image)
+            r2, g2, b2 = cv2.split(self.golden_image)
             if (np.array_equal(r1, r2) and np.array_equal(g1, g2) and np.array_equal(b1, b2)):
                 return True
             else:
@@ -244,29 +246,29 @@ class MainWindow(QMainWindow):
 
     #algorithm that makes controus from batch and golden image, compares largest one and sends results
     def contour_algorithm(self):
-        if self.batchImages and self.goldenImage is not None:
-            currImage = self.batchImages[self.current_index]
-            grayBatch = cv2.cvtColor(currImage, cv2.COLOR_BGR2GRAY)
-            grayGolden = cv2.cvtColor(self.goldenImage, cv2.COLOR_BGR2GRAY)
-            _, threshBatch = cv2.threshold(grayBatch, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-            _, threshGolden = cv2.threshold(grayGolden, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-            contours, _ = cv2.findContours(threshBatch, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-            goldenContours, _ = cv2.findContours(threshGolden, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        if self.batch_images and self.golden_image is not None:
+            curr_image = self.batch_images[self.current_index]
+            gray_batch = cv2.cvtColor(curr_image, cv2.COLOR_BGR2GRAY)
+            gray_golden = cv2.cvtColor(self.golden_image, cv2.COLOR_BGR2GRAY)
+            _, thresh_batch = cv2.threshold(gray_batch, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+            _, thresh_golden = cv2.threshold(gray_golden, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+            contours, _ = cv2.findContours(thresh_batch, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            golden_contours, _ = cv2.findContours(thresh_golden, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-            if not contours or not goldenContours:
+            if not contours or not golden_contours:
                 return False
 
-            batchContour = max(contours, key=cv2.contourArea)
-            goldenContour = max(goldenContours, key=cv2.contourArea)
+            batch_contour = max(contours, key=cv2.contourArea)
+            golden_contour = max(golden_contours, key=cv2.contourArea)
 
-            if (cv2.matchShapes(batchContour, goldenContour, cv2.CONTOURS_MATCH_I1, 0.0) < 0.1):
+            if (cv2.matchShapes(batch_contour, golden_contour, cv2.CONTOURS_MATCH_I1, 0.0) < 0.1):
                 return True
             else:
                 return False
 
     #uses both algorithms to determine if imagese are similar or not
     def algorithm_button_clicked(self):
-        if self.batchImages and self.goldenImage is not None:
+        if self.batch_images and self.golden_image is not None:
             result = self.exact_algorithm()
             if result:
                 self.approval_array[self.current_index] = True
@@ -275,25 +277,24 @@ class MainWindow(QMainWindow):
             self.truth_val_changed(self.approval_array[self.current_index])
 
     #updates approval image based on truth value chosen
-    def truth_val_changed(self, truthVal):
-        if (truthVal == True):
-            self.display_image(self.greenCheck, self.approvalImage)
+    def truth_val_changed(self, truth_val):
+        if (truth_val == True):
+            self.display_image(self.green_check, self.approval_image)
             return
-        if (truthVal == False):
-            self.display_image(self.redX, self.approvalImage)
+        if (truth_val == False):
+            self.display_image(self.red_x, self.approval_image)
             return
         else:
-            self.display_image(self.whiteSpace, self.approvalImage)
+            self.display_image(self.white_space, self.approval_image)
             return
 
     #overrides resize event to ensure images are resized when window is resized
     def resizeEvent(self, event):
         super().resizeEvent(event)
-        if self.goldenImage is not None:
-            self.display_image(self.goldenImage, self.ui.goldenView)
-        if self.batchImage is not None:
-            self.display_image(self.batchImage, self.ui.batchView)
-        if self.batchImages:
+        if self.golden_image is not None:
+            self.display_image(self.golden_image, self.ui.goldenView)
+        if self.batch_images:
+            self.display_image(self.batch_images[self.current_index], self.ui.batchView)
             self.truth_val_changed(self.approval_array[self.current_index])
         else:
             self.truth_val_changed("Unrated")
@@ -303,18 +304,26 @@ class MainWindow(QMainWindow):
         if save_path:
             if save_path[-5:] != ".json":
                 save_path += ".json"
-            self.create_JSON(save_path)
+            self.create_json(save_path)
 
     def auto_calculate(self):
-        if self.batchImages and self.goldenImage is not None:
-            for i in range(len(self.batchImages)):
+        if self.batch_images and self.golden_image is not None:
+            reply = QMessageBox.question(
+                self,
+                "Auto algorithm",
+                "Auto algorithm will override all manual ratings. Proceed?",
+                QMessageBox.Yes | QMessageBox.No
+            )
+            if reply == QMessageBox.No:
+                return
+            for i in range(len(self.batch_images)):
                 self.current_index = i
                 self.algorithm_button_clicked()
-            for i in range(len(self.batchImages)):
+            for i in range(len(self.batch_images)):
                 self.prev_batch_image()
-            self.batchImage = self.batchImages[self.current_index]
-            self.display_image(self.batchImage, self.ui.batchView)
-            self.ui.indexTrackerText.setText(f"{self.current_index + 1}/{len(self.batchImages)}")
+            self.batch_image = self.batch_images[self.current_index]
+            self.display_image(self.batch_image, self.ui.batchView)
+            self.ui.indexTrackerText.setText(f"{self.current_index + 1}/{len(self.batch_images)}")
         else:
             QMessageBox.warning(self, "Error", "upload golden and batch images before auto calculating.")
             return
@@ -328,10 +337,10 @@ class MainWindow(QMainWindow):
                     image_data = json.load(file)
                 golden_image_path = image_data.get("golden_image", {}).get("path")
                 if golden_image_path and os.path.exists(golden_image_path):
-                    self.goldenFilePath = (golden_image_path,)
-                    self.goldenImage = self.image_process(golden_image_path)
-                    if self.goldenImage is not None:
-                        self.display_image(self.goldenImage, self.ui.goldenView)
+                    self.golden_file_path = (golden_image_path,)
+                    self.golden_image = self.image_process(golden_image_path)
+                    if self.golden_image is not None:
+                        self.display_image(self.golden_image, self.ui.goldenView)
                 else:
                     QMessageBox.warning(self, "Error", "Golden image path is invalid or does not exist.")
 
@@ -354,14 +363,14 @@ class MainWindow(QMainWindow):
                     QMessageBox.warning(self, "Invalid Images", f"Some images in JSON file invalid."
                     )
 
-                self.batchImages = processed_images
-                self.batchPaths = valid_paths
+                self.batch_images = processed_images
+                self.batch_paths = valid_paths
                 self.current_index = 0
                 self.approval_array = [img.get("similarity", "Unrated") for img in batch_images_data]
-                self.batchImage = processed_images[0]
+                self.batch_image = processed_images[0]
                 self.truth_val_changed(self.approval_array[self.current_index])
                 self.display_image(processed_images[0], self.ui.batchView)
-                self.ui.indexTrackerText.setText(f"{self.current_index + 1}/{len(self.batchImages)}")
+                self.ui.indexTrackerText.setText(f"{self.current_index + 1}/{len(self.batch_images)}")
 
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"An error occurred while loading the JSON file: {str(e)}")
