@@ -64,7 +64,12 @@ class MainWindow(QMainWindow):
     def upload_button_clicked(self, button):
         try:
             if button == self.ui.uploadGolden:
-                self.golden_file_path = QFileDialog.getOpenFileName(self, "Select Image", "", "Image Files (*.png *.jpg *.bmp)")
+                self.golden_file_path = QFileDialog.getOpenFileName(
+                    self,
+                    "Select Image", 
+                    "", 
+                    "Image Files (*.png *.jpg *.bmp)"
+                    )
                 if self.golden_file_path[0] != '':
                     processed_image = self.image_process(self.golden_file_path[0])
                     if processed_image is not None:
@@ -72,16 +77,33 @@ class MainWindow(QMainWindow):
                         self.display_image(processed_image, self.ui.goldenView)
                 else:
                     #print("No file selected.")
-                    QMessageBox.warning(self, "Error", "Please select a file to upload.")
+                    QMessageBox.warning(
+                        self, 
+                        "Error", 
+                        "Please select a file to upload."
+                        )
                 return
             elif button == self.ui.uploadBatch:
-                QMessageBox.information(self, "Batch Upload", f"Please select up to {self.MAX_BATCH_IMAGES} images")
-                filepaths = QFileDialog.getOpenFileNames(self, "Select Image(s)", "", "Image Files (*.png *.jpg *.bmp)")
+                QMessageBox.information(
+                    self, 
+                    "Batch Upload", 
+                    f"Please select up to {self.MAX_BATCH_IMAGES} images"
+                    )
+                filepaths = QFileDialog.getOpenFileNames(
+                    self, 
+                    "Select Image(s)", 
+                    "", 
+                    "Image Files (*.png *.jpg *.bmp)"
+                    )
                 selected_paths = filepaths[0]
 
                 if not selected_paths:
                     #print("No files selected.")
-                    QMessageBox.warning(self, "Error", "Please select at least one file to upload.")
+                    QMessageBox.warning(
+                        self, 
+                        "Error", 
+                        "Please select at least one file to upload."
+                        )
                     return
 
                 if len(selected_paths) > self.MAX_BATCH_IMAGES:
@@ -125,13 +147,21 @@ class MainWindow(QMainWindow):
                         "Batch Loaded",
                         f"Loaded {len(processed_images)} batch images."
                     )
-                self.ui.indexTrackerText.setText(f"{self.current_index + 1}/{len(self.batch_images)}")
+                self.ui.indexTrackerText.setText(f"{self.current_index+1} / {len(self.batch_images)}")
                 return
             else:
-                QMessageBox.warning(self, "Error", "Unsupported upload button.")
+                QMessageBox.warning(
+                    self, 
+                    "Error", 
+                    "Unsupported upload button."
+                    )
                 return
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"An error occurred: {str(e)}")
+            QMessageBox.critical(
+                self, 
+                "Error", 
+                f"An error occurred: {str(e)}"
+                )
 
     #turns image path into image object, uses check color function to determine if image is used
     def image_process(self, image_path):
